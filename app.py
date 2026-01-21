@@ -66,3 +66,30 @@ class UserInput(BaseModel):
             return 2
         else:
             return 3
+        
+@app.post('/predict')
+def predict_premium(data: UserInput):
+
+    input_df = pd.DataFrame([{
+        'bmi': data.bmi,
+        'age_group': data.age_group,
+        'lifestyle_risk': data.lifestyle_risk,
+        'city_tier': data.city_tier,
+        'income_lpa': data.income_lpa,
+        'occupation': data.occupation
+    }])
+
+    prediction = model.predict(input_df)[0]
+    probabilities = model.predict_proba(input_df)[0]
+    classes = model.classes_
+    
+    class_probabilities = {str(cls): float(prob) for cls, prob in zip(classes, probabilities)}
+    confidence = float(max(probabilities))
+
+    return JSONResponse(status_code=200, content={
+        'response': {
+            'predicted_category': prediction,
+            'confidence': confidence,
+            'class_probabilities': class_probabilities
+        }
+    })
